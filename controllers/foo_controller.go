@@ -75,7 +75,7 @@ func (r *FooReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		we clean up the deployment object.
 		(If we nothing without this func, the old deployment object keeps existing.)
 	*/
-	if err := r.cleanOwnedResources(ctx, log, &foo); err != nil {
+	if err := r.cleanupOwnedResources(ctx, log, &foo); err != nil {
 		log.Error(err, "failed to clean up old Deployment resources for this Foo")
 		return ctrl.Result{}, err
 	}
@@ -194,13 +194,13 @@ func (r *FooReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 // cleanpOwnedResources will delete any existing Deployment resources that
 // were created for the given Foo that no longer match the
 // foo.spec.deploymentName field.
-func (r *FooReconciler) cleanpOwnedResources(ctx context.Context, log logr.Logger, foo *samplecontrollerv1alpha1.Foo) error {
+func (r *FooReconciler) cleanupOwnedResources(ctx context.Context, log logr.Logger, foo *samplecontrollerv1alpha1.Foo) error {
 	log.Info("finding existing Deployments for Foo resource")
 
 	// List all deployment resources owned by this Foo
 	var deployments appsv1.DeploymentList
 	if err := r.List(ctx, &deployments,
-		client.IsNamespace(foo.Namespace),
+		client.InNamespace(foo.Namespace),
 		client.MatchingFields(map[string]string{deploymentOwnerKey: foo.Name})); err != nil {
 		return err
 	}
@@ -234,7 +234,7 @@ var (
 func (r *FooReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 	// add deploymentOwnerKey index to deployment object which foo resource owns
-	if err := mgr.GetFieldIndexer().IndexField(&appsv1.Deployment(), deploymentOwnerKey, func(rawObj runtime.Object) []string {
+	if err := mgr.GetFieldIndexer().IndexField(&appsv1.Deployment{}, deploymentOwnerKey, func(rawObj runtime.Object) []string {
 		// grab the deployment object, extract the owner...
 		deployment := rawObj.(*appsv1.Deployment)
 		owner := metav1.GetControllerOf(deployment)
