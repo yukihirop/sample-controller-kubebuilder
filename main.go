@@ -18,6 +18,7 @@ package main
 import (
 	"flag"
 	"os"
+	"time"
 
 	samplecontrollerv1alpha1 "github.com/yukihirop/sample-controller-kubebuilder/api/v1alpha1"
 	"github.com/yukihirop/sample-controller-kubebuilder/controllers"
@@ -52,8 +53,10 @@ func main() {
 	ctrl.SetLogger(zap.New(func(o *zap.Options) {
 		o.Development = true
 	}))
+	var resyncPeriod = time.Second * 30
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+		SyncPeriod:         &resyncPeriod,
 		Scheme:             scheme,
 		MetricsBindAddress: metricsAddr,
 		LeaderElection:     enableLeaderElection,
